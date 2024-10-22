@@ -2,6 +2,7 @@
 
 const Orgao = require('../models/orgaos');
 const Usuario = require('../models/usuarios');
+const OrgaoTipo = require('../models/orgaos_tipos');
 const { Op } = require('sequelize');
 const querystring = require('querystring');
 
@@ -24,7 +25,12 @@ exports.getOrgaos = async (req, res) => {
                 {
                     model: Usuario,
                     as: 'Usuario',
-                    attributes: ['usuario_id', 'usuario_nome']
+                    attributes: ['usuario_nome']
+                },
+                {
+                    model: OrgaoTipo,
+                    as: 'tipo',
+                    attributes: ['orgao_tipo_nome']
                 }
             ]
         });
@@ -91,12 +97,24 @@ exports.createOrgao = async (req, res) => {
 // Buscar um órgão por ID
 exports.getOrgaoById = async (req, res) => {
     try {
-        const orgao = await Orgao.findByPk(req.params.id);
-        if (orgao) {
-            return res.status(200).json({ status: 200, message: 'Órgão encontrado.', dados: orgao });
-        } else {
+        const orgao = await Orgao.findByPk(req.params.id, {
+            include: [
+                {
+                    model: Usuario,
+                    as: 'Usuario',
+                    attributes: ['usuario_nome']
+                },
+                {
+                    model: OrgaoTipo,
+                    as: 'tipo',
+                    attributes: ['orgao_tipo_nome']
+                }
+            ]
+        });
+        if (!orgao) {
             return res.status(404).json({ status: 404, message: 'Órgão não encontrado' });
         }
+        return res.status(200).json({ status: 200, message: 'Órgão encontrado.', dados: orgao });
     } catch (error) {
         return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }

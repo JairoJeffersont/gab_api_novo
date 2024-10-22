@@ -6,9 +6,15 @@ const PessoasProfissoes = require('../models/PessoasProfissoes'); // Ajuste o ca
 exports.getAllProfissoes = async (req, res) => {
     try {
         const profissoes = await PessoasProfissoes.findAll();
-        res.json(profissoes);
+
+        if (profissoes.length === 0) {
+            return res.status(200).json({ status: 200, message: 'Nenhuma profissão encontrada' });
+        }
+
+        return res.status(200).json({ status: 200, message: `${profissoes.length} profissão(ões) encontrada(s)`, dados: profissoes });
+
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao listar profissões', error });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -16,9 +22,9 @@ exports.getAllProfissoes = async (req, res) => {
 exports.createProfissao = async (req, res) => {
     try {
         const novaProfissao = await PessoasProfissoes.create(req.body);
-        res.status(201).json(novaProfissao);
+        return res.status(201).json({ status: 201, message: 'Profissão criada com sucesso.', dados: novaProfissao });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao criar profissão', error });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -28,11 +34,11 @@ exports.getProfissaoById = async (req, res) => {
     try {
         const profissao = await PessoasProfissoes.findByPk(id);
         if (!profissao) {
-            return res.status(404).json({ message: 'Profissão não encontrada' });
+            return res.status(404).json({ status: 404, message: 'Profissão não encontrada' });
         }
-        res.json(profissao);
+        return res.status(200).json({ status: 200, message: 'Profissão encontrada', dados: profissao });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao buscar profissão', error });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -42,12 +48,12 @@ exports.updateProfissao = async (req, res) => {
     try {
         const [updated] = await PessoasProfissoes.update(req.body, { where: { pessoas_profissoes_id: id } });
         if (!updated) {
-            return res.status(404).json({ message: 'Profissão não encontrada' });
+            return res.status(404).json({ status: 404, message: 'Profissão não encontrada' });
         }
         const updatedProfissao = await PessoasProfissoes.findByPk(id);
-        res.json(updatedProfissao);
+        return res.status(200).json({ status: 200, message: 'Profissão atualizada com sucesso.', dados: updatedProfissao });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao atualizar profissão', error });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -57,10 +63,10 @@ exports.deleteProfissao = async (req, res) => {
     try {
         const deleted = await PessoasProfissoes.destroy({ where: { pessoas_profissoes_id: id } });
         if (!deleted) {
-            return res.status(404).json({ message: 'Profissão não encontrada' });
+            return res.status(404).json({ status: 404, message: 'Profissão não encontrada' });
         }
-        res.status(204).send();
+        return res.status(200).json({ status: 200, message: 'Profissão deletada com sucesso.' });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao deletar profissão', error });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };

@@ -37,4 +37,18 @@ const PessoaTipo = sequelize.define('PessoaTipo', {
   updatedAt: false
 });
 
+// Relacionamento: Um usuário pode ter muitos tipos de pessoa
+Usuario.hasMany(PessoaTipo, { 
+  foreignKey: 'pessoa_tipo_criado_por', 
+  sourceKey: 'usuario_id', 
+  as: 'PessoaTipos' 
+});
+
+// Relacionamento: Um tipo de pessoa pertence a um usuário
+PessoaTipo.belongsTo(Usuario, { 
+  foreignKey: 'pessoa_tipo_criado_por', 
+  targetKey: 'usuario_id', 
+  as: 'Usuario' 
+});
+
 module.exports = PessoaTipo;

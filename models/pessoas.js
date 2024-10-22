@@ -124,4 +124,19 @@ const Pessoa = sequelize.define('Pessoa', {
   updatedAt: 'pessoa_atualizada_em'
 });
 
+
+Usuario.hasMany(Pessoa, { foreignKey: 'pessoa_criada_por', sourceKey: 'usuario_id', as: 'pessoas' });
+Pessoa.belongsTo(Usuario, { foreignKey: 'pessoa_criada_por', targetKey: 'usuario_id', as: 'Usuario' });
+
+PessoaTipo.hasMany(Pessoa, { foreignKey: 'pessoa_tipo', sourceKey: 'pessoa_tipo_id', as: 'pessoas' });
+Pessoa.belongsTo(PessoaTipo, { foreignKey: 'pessoa_tipo', targetKey: 'pessoa_tipo_id', as: 'PessoaTipo' });
+
+Orgao.hasMany(Pessoa, { foreignKey: 'pessoa_orgao', sourceKey: 'orgao_id', as: 'pessoas' });
+Pessoa.belongsTo(Orgao, { foreignKey: 'pessoa_orgao', targetKey: 'orgao_id', as: 'Orgao' });
+
+PessoaProfissao.hasMany(Pessoa, { foreignKey: 'pessoa_profissao', sourceKey: 'pessoas_profissoes_id', as: 'pessoas' });
+Pessoa.belongsTo(PessoaProfissao, { foreignKey: 'pessoa_profissao', targetKey: 'pessoas_profissoes_id', as: 'PessoaProfissao' });
+
+
+
 module.exports = Pessoa;
