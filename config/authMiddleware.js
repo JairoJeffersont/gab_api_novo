@@ -4,7 +4,7 @@ const authMiddleware = (req, res, next) => {
     const token = req.headers['authorization']; // Espera que o token seja enviado no cabeçalho 'Authorization'
 
     if (!token) {
-        return res.status(403).json({ error: 'Token não fornecido.' });
+        return res.status(403).json({ status: 403, message: 'Token não fornecido.' });
     }
 
     // Remove o prefixo "Bearer " do token se estiver presente
@@ -12,7 +12,7 @@ const authMiddleware = (req, res, next) => {
 
     jwt.verify(tokenSemPrefixo, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
-            return res.status(401).json({ error: 'Token inválido.' });
+            return res.status(401).json({ status: 401, message: 'Token inválido.' });
         }
 
         // Salva as informações do usuário decodificado no objeto `req`

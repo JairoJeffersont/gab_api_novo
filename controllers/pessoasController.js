@@ -87,10 +87,9 @@ exports.createPessoa = async (req, res) => {
             return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
         }
 
-
         let pessoa_foto = null;
         if (req.file) {
-            pessoa_foto = req.file.filename; // Pega o nome do arquivo da foto
+            pessoa_foto = req.file.filename;
         }
 
         const novoPessoa = await Pessoa.create({
@@ -106,18 +105,15 @@ exports.createPessoa = async (req, res) => {
             pessoa_sexo: req.body.pessoa_sexo,
             pessoa_facebook: req.body.pessoa_facebook,
             pessoa_instagram: req.body.pessoa_instagram,
-            pessoa_x: req.body.pessoa_x, // Rede social X
+            pessoa_x: req.body.pessoa_x,
             pessoa_informacoes: req.body.pessoa_informacoes,
-            pessoa_profissao: req.body.pessoa_profissao, // ID da profissão
+            pessoa_profissao: req.body.pessoa_profissao,
             pessoa_cargo: req.body.pessoa_cargo,
-            pessoa_tipo: req.body.pessoa_tipo, // ID do tipo de pessoa
-            pessoa_orgao: req.body.pessoa_orgao, // ID do órgão
-            pessoa_foto, // Nome do arquivo da foto
-            pessoa_criada_por: req.usuario_id// ID do usuário que está criando a pessoa (supondo que o usuário esteja na sessão)
+            pessoa_tipo: req.body.pessoa_tipo,
+            pessoa_orgao: req.body.pessoa_orgao,
+            pessoa_foto,
+            pessoa_criada_por: req.usuario_id
         });
-
-
-
 
         return res.status(201).json({ status: 201, message: 'Pessoa criada com sucesso.', dados: novoPessoa });
     } catch (error) {

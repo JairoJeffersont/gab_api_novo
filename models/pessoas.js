@@ -18,7 +18,7 @@ const Pessoa = sequelize.define('Pessoa', {
     allowNull: false
   },
   pessoa_aniversario: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.DATEONLY,
     allowNull: false
   },
   pessoa_email: {

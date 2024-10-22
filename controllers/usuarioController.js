@@ -21,6 +21,10 @@ exports.getUsuarios = async (req, res) => {
             }
         });
 
+        if (usuarios.length === 0) {
+            return res.status(200).json({ status: 200, message: 'Nenhum usuário encontrado' });
+        }
+
         return res.status(200).json({ status: 200, message: usuarios.length + ' usuário(s) encontrado(s)', dados: usuarios });
     } catch (error) {
         return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
@@ -116,7 +120,7 @@ exports.updateUsuario = async (req, res) => {
                     }
                 });
             }
-            req.body.usuario_foto = req.file.filename; 
+            req.body.usuario_foto = req.file.filename;
         }
 
         await usuario.update(req.body);
