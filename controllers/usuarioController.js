@@ -160,7 +160,7 @@ exports.deleteUsuario = async (req, res) => {
         }
 
         await usuario.destroy();
-        return res.status(200).send();
+        return res.status(200).json({ status: 200, message: 'Usuário apagado com sucesso.' });
     } catch (error) {
         if (error.name === 'SequelizeForeignKeyConstraintError') {
             return res.status(409).json({ status: 409, message: 'Esse usuário não pode ser apagado.' });

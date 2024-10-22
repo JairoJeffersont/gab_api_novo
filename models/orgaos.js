@@ -82,4 +82,7 @@ const Orgao = sequelize.define('Orgao', {
   updatedAt: 'orgao_atualizado_em',
 });
 
+Usuario.hasMany(Orgao, { foreignKey: 'orgao_criado_por', sourceKey: 'usuario_id', as: 'orgaos' });
+Orgao.belongsTo(Usuario, { foreignKey: 'orgao_criado_por', targetKey: 'usuario_id', as: 'Usuario' });
+
 module.exports = Orgao;

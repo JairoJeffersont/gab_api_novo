@@ -1,14 +1,57 @@
 // controllers/orgaosController.js
 
 const Orgao = require('../models/orgaos');
+const Usuario = require('../models/usuarios');
+const { Op } = require('sequelize');
+const querystring = require('querystring');
 
-// Listar todos os órgãos
+
 exports.getOrgaos = async (req, res) => {
+    const { itens = 10, pagina = 1, ordenarPor = 'orgao_id', ordem = 'ASC', busca } = req.query;
+
     try {
-        const orgaos = await Orgao.findAll();
-        res.status(200).json({ status: 200, message: orgaos.length + ' ógãos(s) encontrado(s)', dados: orgaos });
+        const limit = parseInt(itens, 10);
+        const offset = (pagina - 1) * limit;
+
+        const where = busca ? { orgao_nome: { [Op.like]: `%${busca}%` } } : {};
+
+        const orgaos = await Orgao.findAll({
+            where: where,
+            order: [[ordenarPor, ordem]],
+            limit: limit,
+            offset: offset,
+            include: [
+                {
+                    model: Usuario,
+                    as: 'Usuario',
+                    attributes: ['usuario_id', 'usuario_nome']
+                }
+            ]
+        });
+
+        const totalOrgaos = await Orgao.count({ where: where });
+        const totalPaginas = Math.ceil(totalOrgaos / limit);
+
+        const baseUrl = req.protocol + '://' + req.get('host') + req.baseUrl;
+
+        const links = {
+            primeira: `${baseUrl}?${querystring.stringify({ itens, pagina: 1, ordenarPor, ordem, ...(busca && { busca }) })}`,
+            atual: `${baseUrl}?${querystring.stringify({ itens, pagina, ordenarPor, ordem, ...(busca && { busca }) })}`,
+            ultima: `${baseUrl}?${querystring.stringify({ itens, pagina: totalPaginas, ordenarPor, ordem, ...(busca && { busca }) })}`,
+        };
+
+        if (orgaos.length == 0) {
+            return res.status(200).json({ status: 200, message: 'Nenhum órgão encontrado' });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            message: orgaos.length + ' órgão(s) encontrado(s)',
+            dados: orgaos,
+            links: links
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -50,12 +93,12 @@ exports.getOrgaoById = async (req, res) => {
     try {
         const orgao = await Orgao.findByPk(req.params.id);
         if (orgao) {
-            res.json(orgao);
+            return res.status(200).json({ status: 200, message: 'Órgão encontrado.', dados: orgao });
         } else {
-            res.status(404).json({ error: 'Órgão não encontrado' });
+            return res.status(404).json({ status: 404, message: 'Órgão não encontrado' });
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -65,12 +108,12 @@ exports.updateOrgao = async (req, res) => {
         const orgao = await Orgao.findByPk(req.params.id);
         if (orgao) {
             await orgao.update(req.body);
-            res.json(orgao);
+            return res.status(200).json({ status: 200, message: 'Órgão atualizado com sucesso.', dados: orgao });
         } else {
-            res.status(404).json({ error: 'Órgão não encontrado' });
+            return res.status(404).json({ status: 404, message: 'Órgão não encontrado' });
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
 
@@ -80,11 +123,16 @@ exports.deleteOrgao = async (req, res) => {
         const orgao = await Orgao.findByPk(req.params.id);
         if (orgao) {
             await orgao.destroy();
-            res.json({ message: 'Órgão deletado com sucesso' });
+            return res.status(200).json({ status: 200, message: 'Órgão apagado com sucesso.' });
         } else {
-            res.status(404).json({ error: 'Órgão não encontrado' });
+            return res.status(404).json({ status: 404, message: 'Órgão não encontrado' });
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(409).json({ status: 409, message: 'Esse órgão não pode ser apagado.' });
+        }
+
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 };
