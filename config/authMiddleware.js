@@ -20,8 +20,6 @@ const authMiddleware = (req, res, next) => {
         req.usuario_email = decoded.email;
         req.usuario_id = decoded.id;
         req.usuario_nivel = decoded.nivel;
-
-        console.log(decoded);
         
         next(); // Chama o próximo middleware ou a rota
     });
