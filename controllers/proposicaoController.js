@@ -21,7 +21,8 @@ exports.getProposicoes = async (req, res) => {
 
 exports.atualizarProposicoes = async (req, res) => {
     try {
-        const ano = req.query.ano;
+        const ano = req.query.ano || new Date().getFullYear();
+
         const url = `https://dadosabertos.camara.leg.br/arquivos/proposicoes/json/proposicoes-${ano}.json`;
 
         const response = await axios.get(url);
@@ -40,7 +41,6 @@ exports.atualizarProposicoes = async (req, res) => {
 
         await Proposicao.destroy({ where: { proposicao_ano: ano } });
 
-        // Inserção em blocos
         for (let i = 0; i < proposicoes.length; i += BATCH_SIZE) {
             const chunk = proposicoes.slice(i, i + BATCH_SIZE);
             await Proposicao.bulkCreate(chunk);
@@ -55,7 +55,7 @@ exports.atualizarProposicoes = async (req, res) => {
 
 exports.atualizarAutoresProposicoes = async (req, res) => {
     try {
-        const ano = req.query.ano;
+        const ano = req.query.ano || new Date().getFullYear();
         const url = `https://dadosabertos.camara.leg.br/arquivos/proposicoesAutores/json/proposicoesAutores-${ano}.json`;
 
         const response = await axios.get(url);
