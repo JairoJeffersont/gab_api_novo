@@ -7,6 +7,8 @@ const PessoaTipo = require('../models/pessoas_tipos');
 const PessoaProfissao = require('../models/pessoas_profissoes');
 const Orgao = require('../models/orgaos');
 const { Op } = require('sequelize');
+const path = require('path');
+const fs = require('fs');
 
 
 // Listar todas as pessoas
@@ -85,10 +87,39 @@ exports.createPessoa = async (req, res) => {
             return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
         }
 
-        req.body.pessoa_criada_por = req.usuario_id;
 
-        const pessoa = await Pessoa.create(req.body);
-        return res.status(201).json({ status: 201, message: 'Pessoa criada com sucesso.', dados: pessoa });
+        let pessoa_foto = null;
+        if (req.file) {
+            pessoa_foto = req.file.filename; // Pega o nome do arquivo da foto
+        }
+
+        const novoPessoa = await Pessoa.create({
+            pessoa_nome: req.body.pessoa_nome,
+            pessoa_email: req.body.pessoa_email,
+            pessoa_telefone: req.body.pessoa_telefone,
+            pessoa_aniversario: req.body.pessoa_aniversario,
+            pessoa_endereco: req.body.pessoa_endereco,
+            pessoa_bairro: req.body.pessoa_bairro,
+            pessoa_municipio: req.body.pessoa_municipio,
+            pessoa_estado: req.body.pessoa_estado,
+            pessoa_cep: req.body.pessoa_cep,
+            pessoa_sexo: req.body.pessoa_sexo,
+            pessoa_facebook: req.body.pessoa_facebook,
+            pessoa_instagram: req.body.pessoa_instagram,
+            pessoa_x: req.body.pessoa_x, // Rede social X
+            pessoa_informacoes: req.body.pessoa_informacoes,
+            pessoa_profissao: req.body.pessoa_profissao, // ID da profissão
+            pessoa_cargo: req.body.pessoa_cargo,
+            pessoa_tipo: req.body.pessoa_tipo, // ID do tipo de pessoa
+            pessoa_orgao: req.body.pessoa_orgao, // ID do órgão
+            pessoa_foto, // Nome do arquivo da foto
+            pessoa_criada_por: req.usuario_id// ID do usuário que está criando a pessoa (supondo que o usuário esteja na sessão)
+        });
+
+
+
+
+        return res.status(201).json({ status: 201, message: 'Pessoa criada com sucesso.', dados: novoPessoa });
     } catch (error) {
 
         if (error.name === 'SequelizeUniqueConstraintError') {
@@ -102,6 +133,8 @@ exports.createPessoa = async (req, res) => {
         if (error.name === 'SequelizeDatabaseError') {
             return res.status(422).json({ status: 422, message: 'Um ou mais campos têm o tipo de dado incorreto.' });
         }
+
+        console.log(error);
 
         return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
@@ -148,12 +181,30 @@ exports.updatePessoa = async (req, res) => {
     try {
         const pessoa = await Pessoa.findByPk(req.params.id);
 
+        // Verifica se a pessoa existe
         if (!pessoa) {
             return res.status(404).json({ status: 404, message: 'Pessoa não encontrada' });
         }
 
+        // Verifica se uma nova foto foi enviada
+        if (req.file) {
+            // Se a pessoa já tiver uma foto, deleta a foto anterior
+            if (pessoa.pessoa_foto) {
+                const filePath = path.join(__dirname, '../public/uploads/', pessoa.pessoa_foto);
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Erro ao deletar o arquivo anterior:', err);
+                    }
+                });
+            }
+            // Atualiza o campo pessoa_foto no req.body com o nome da nova foto
+            req.body.pessoa_foto = req.file.filename;
+        }
+
+        // Atualiza os dados da pessoa com os dados enviados no req.body
         await pessoa.update(req.body);
 
+        // Retorna a resposta de sucesso
         return res.status(200).json({
             status: 200,
             message: 'Pessoa atualizada com sucesso.',
@@ -161,6 +212,7 @@ exports.updatePessoa = async (req, res) => {
         });
 
     } catch (error) {
+        // Tratamento de erro genérico
         return res.status(500).json({
             status: 500,
             message: 'Erro ao atualizar pessoa',
@@ -174,6 +226,16 @@ exports.deletePessoa = async (req, res) => {
     try {
         const pessoa = await Pessoa.findByPk(req.params.id);
         if (pessoa) {
+
+            if (pessoa.pessoa_foto) {
+                const filePath = path.join(__dirname, '../public/uploads/', pessoa.pessoa_foto);
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Erro ao deletar o arquivo:', err);
+                    }
+                });
+            }
+
             await pessoa.destroy();
             return res.status(200).json({ status: 200, message: 'Pessoa apagada com sucesso.' });
         } else {
