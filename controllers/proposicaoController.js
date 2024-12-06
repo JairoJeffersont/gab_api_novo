@@ -78,7 +78,7 @@ exports.getProposicoes = async (req, res) => {
         };
 
         if (proposicoes.count === 0) {
-            return res.status(200).json({ status: 200, message: 'Nenhuma proposição encontrada' });
+            return res.status(200).json({ status: 204, message: 'Nenhuma proposição encontrada' });
         }
 
         const proposicoesSemAutores = proposicoes.rows.map(proposicao => {

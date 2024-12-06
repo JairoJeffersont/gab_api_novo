@@ -2,11 +2,15 @@ const express = require('express');
 const sequelize = require('./config/database');
 const routes = require('./routes'); // Importando as rotas
 const insertDefaultData = require('./config/insertDefaultData');
+const cors = require('cors');
 
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 app.use('/api/public', express.static('public')); // Rota para a pasta public
 
