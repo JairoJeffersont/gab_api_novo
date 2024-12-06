@@ -5,12 +5,9 @@ const { Op } = require('sequelize');
 const axios = require('axios');
 const querystring = require('querystring');
 
-
 require('dotenv').config();
 
-
 const BATCH_SIZE = 100;
-
 
 exports.getProposicoes = async (req, res) => {
     try {
@@ -86,8 +83,6 @@ exports.getProposicoes = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
-
 
 exports.atualizarProposicoes = async (req, res) => {
     try {
@@ -222,7 +217,7 @@ exports.BuscarMP = async (req, res) => {
         });
 
         const totalItens = mappedData.length;
-        const totalPaginas = Math.ceil(totalItens / itens);  // Calcular total de páginas
+        const totalPaginas = Math.ceil(totalItens / itens); 
 
         const paginaAtual = Math.min(Math.max(pagina, 1), totalPaginas);
 
