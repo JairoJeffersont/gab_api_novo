@@ -36,7 +36,8 @@ exports.atualizarProposicoes = async (req, res) => {
             proposicao_ano: item.ano !== 0 ? item.ano : ano,
             proposicao_ementa: item.ementa,
             proposicao_apresentacao: item.dataApresentacao,
-            proposicao_arquivada: item.ultimoStatus.descricaoSituacao === 'Arquivada'
+            proposicao_arquivada: item.ultimoStatus.idSituacao === '923',
+            proposicao_documento: item.urlInteiroTeor
         }));
 
         await Proposicao.destroy({ where: { proposicao_ano: ano } });
@@ -61,13 +62,11 @@ exports.atualizarAutoresProposicoes = async (req, res) => {
         const response = await axios.get(url);
         const dados = response.data.dados;
 
-        // Buscando todas as proposições existentes para verificar a validade dos autores
         const proposicoesExistentes = await Proposicao.findAll({
             where: { proposicao_ano: ano },
-            attributes: ['proposicao_id'], // Selecionando apenas os IDs
+            attributes: ['proposicao_id'], 
         });
 
-        // Criando um conjunto (set) para facilitar a verificação de existência
         const proposicoesIds = new Set(proposicoesExistentes.map(p => p.proposicao_id));
 
         const autores = dados
@@ -85,7 +84,6 @@ exports.atualizarAutoresProposicoes = async (req, res) => {
 
         await ProposicoesAutores.destroy({ where: { proposicao_ano: ano } });
 
-        // Inserção em blocos
         for (let i = 0; i < autores.length; i += BATCH_SIZE) {
             const chunk = autores.slice(i, i + BATCH_SIZE);
             await ProposicoesAutores.bulkCreate(chunk);

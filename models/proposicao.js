@@ -38,6 +38,10 @@ const Proposicao = sequelize.define('Proposicoes', {
     type: DataTypes.BOOLEAN,
     allowNull: true,
   },
+  proposicao_documento: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   timestamps: false
 });

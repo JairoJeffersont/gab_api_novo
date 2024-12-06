@@ -18,7 +18,7 @@ exports.login = async (req, res) => {
                     nivel: 1 // Nível do usuário root
                 },
                 process.env.JWT_SECRET,
-                { expiresIn: '5m' }
+                { expiresIn: '24h' }
             );
             return res.json({
                 nome: process.env.MASTER_USER,
