@@ -8,6 +8,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/api/public', express.static('public')); // Rota para a pasta public
+
+
 // Usando as rotas
 app.use('/api', routes);
 

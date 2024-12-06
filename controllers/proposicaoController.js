@@ -260,3 +260,111 @@ exports.BuscarMP = async (req, res) => {
         return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
     }
 }
+
+exports.BuscaPrincipal = async (req, res) => {
+
+    try {
+        const id = req.query.id;
+
+        let uri = `https://dadosabertos.camara.leg.br/api/v2/proposicoes/${id}`;
+
+        const response = await axios.get(uri);
+        const dados = response.data.dados;
+
+        if (!dados.uriPropPrincipal) {
+            return res.status(200).json({ status: 200, dados: [] });
+        }
+
+        while (uri) {
+            const response = await axios.get(uri);
+            const dados = response.data.dados;
+
+            uri = dados.uriPropPrincipal || null;
+
+            const autoresResponse = await axios.get(`https://dadosabertos.camara.leg.br/api/v2/proposicoes/${dados.id}/autores`);
+
+            const autores = autoresResponse.data.dados.map(autor => ({
+                nome: autor.nome,
+                proponente: autor.proponente,
+                ordem_assinatura: autor.ordemAssinatura,
+                autoria_unica: autor.proponente === 1 && autor.ordemAssinatura === 1 ? true : false
+            }));
+
+            const resultado = {
+                proposicao_id: dados.id,
+                proposicao_titulo: `${dados.siglaTipo} ${dados.numero}/${dados.ano}`,
+                proposicao_ementa: dados.ementa,
+                proposicao_detalhes: {
+                    data_apresentacao: dados.dataApresentacao,
+                    arquivado: dados.statusProposicao.codSituacao === 923,
+                    transformada_em_lei: dados.statusProposicao.codSituacao === 1140,
+                    documento: dados.urlInteiroTeor
+                },
+                proposicao_autores: autores
+            };
+
+            if (!uri) {
+                return res.status(200).json({ status: 200, message: "OK", dados: resultado });
+            }
+
+        }
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: error });
+    }
+}
+
+exports.BuscarApensadosDoGabinete = async (req, res) => {
+    const id = req.query.id;
+
+    try {
+        const response = await axios.get(`https://dadosabertos.camara.leg.br/api/v2//proposicoes/${id}/relacionadas`);
+
+        if (response.data.dados.length == 0) {
+            return res.status(200).json({ status: 200, message: 'Nenhuma proposição encontrada.' });
+        }
+
+        const proposicoes = await Promise.all(
+            response.data.dados
+                .filter(proposicao => proposicao.siglaTipo === 'PL')
+                .map(async (proposicao) => {
+
+                    const detalhes = await axios.get(`https://dadosabertos.camara.leg.br/api/v2/proposicoes/${proposicao.id}`);
+                    const autoresResponse = await axios.get(`https://dadosabertos.camara.leg.br/api/v2//proposicoes/${proposicao.id}/autores`);
+
+                    const autores = autoresResponse.data.dados.map(autor => ({
+                        nome: autor.nome,
+                        proponente: autor.proponente,
+                        ordem_assinatura: autor.ordemAssinatura,
+                        autoria_unica: autor.proponente === 1 && autor.ordemAssinatura === 1 ? true : false
+                    }));
+
+                    const autorDeputado = autores.some(autor => autor.nome === process.env.NOME_PARLAMENTAR);
+
+                    if (autorDeputado) {
+                        return {
+                            proposicao_principal: id,
+                            apensado_id: proposicao.id,
+                            apensado_titulo: `${proposicao.siglaTipo} ${proposicao.numero}/${proposicao.ano}`,
+                            apensado_ementa: proposicao.ementa,
+                           //proposicao_detalhes: {
+                                data_apresentacao: detalhes.data.dados.dataApresentacao,
+                                arquivado: detalhes.data.dados.statusProposicao.codSituacao === 923,
+                                documento: detalhes.data.dados.urlInteiroTeor
+                           // },
+                            //apensado_autores: autores
+                        };
+                    }
+                })
+        );
+
+        const proposicoesFiltradas = proposicoes.filter(Boolean);
+
+        if (proposicoesFiltradas.length == 0) {
+            return res.status(200).json({ status: 200, message: 'Nenhuma proposição encontrada.' });
+        }
+
+        return res.status(200).json({ status: 200, dados: proposicoesFiltradas });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: error });
+    }
+}
