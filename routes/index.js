@@ -25,7 +25,7 @@ router.use('/pessoas', authMiddleware, pessoasRoutes);
 router.use('/postagens-status', authMiddleware, postagensStatusRoutes);
 router.use('/postagens', authMiddleware, postagensRoutes);
 router.use('/oficios', authMiddleware, oficiosRoutes);
-router.use('/proposicao', authMiddleware, proposicaoRoutes);
+router.use('/proposicoes', authMiddleware, proposicaoRoutes);
 router.use('/login', loginRoutes);
 
 router.use((req, res) => {

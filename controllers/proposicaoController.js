@@ -165,3 +165,90 @@ exports.atualizarAutoresProposicoes = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.BuscarMP = async (req, res) => {
+    try {
+        const ano = req.query.ano || 2024;
+        const itens = parseInt(req.query.itens) || 10;
+        const pagina = parseInt(req.query.pagina) || 1;
+
+        let response = await axios.get(`https://legis.senado.leg.br/dadosabertos/materia/pesquisa/lista?sigla=mpv&ano=${ano}`);
+        const materias = response.data.PesquisaBasicaMateria.Materias.Materia;
+
+        const mappedData = await Promise.all(materias.map(async item => {
+            const emendaResponse = await axios.get(`https://legis.senado.leg.br/dadosabertos/materia/emendas/${item.Codigo}`);
+
+            const emendas = emendaResponse?.data?.EmendaMateria?.Materia?.Emendas?.Emenda || [];
+
+            const mappedEmendas = emendas.map(emenda => {
+                const autores = Array.isArray(emenda.AutoriaEmenda?.Autor) ? emenda.AutoriaEmenda.Autor : [];
+
+                const ementa_deputado = autores.some(autor => autor.NomeAutor.toLowerCase() === process.env.NOME_PARLAMENTAR.toLowerCase());
+
+                return {
+                    codigo: emenda.CodigoEmenda,
+                    numero: emenda.NumeroEmenda,
+                    descricaoTurno: emenda.DescricaoTurno,
+                    descricaoTipoEmenda: emenda.DescricaoTipoEmenda,
+                    dataApresentacao: emenda.DataApresentacao,
+                    autores: autores.map(autor => ({
+                        nome: autor.NomeAutor,
+                        partido: autor.IdentificacaoParlamentar?.SiglaPartidoParlamentar,
+                        uf: autor.IdentificacaoParlamentar?.UfParlamentar
+                    })),
+                    textosEmenda: emenda.TextosEmenda?.TextoEmenda?.map(texto => ({
+                        descricao: texto.DescricaoTexto,
+                        url: texto.UrlTexto
+                    })) || [],
+                    ementa_deputado
+                };
+            });
+
+            return {
+                id: item.Codigo,
+                titulo: item.DescricaoIdentificacao,
+                ementa: item.Ementa,
+                emenda_do_deputado: mappedEmendas.some(emenda => emenda.ementa_deputado),
+                data: item.Data,
+                link: `https://www.congressonacional.leg.br/materias/medidas-provisorias/-/mpv/${item.Codigo}`,
+                emendas: mappedEmendas
+            };
+        }));
+
+        mappedData.sort((a, b) => {
+            if (a.titulo > b.titulo) return -1;
+            if (a.titulo < b.titulo) return 1;
+            return 0;
+        });
+
+        const totalItens = mappedData.length;
+        const totalPaginas = Math.ceil(totalItens / itens);  // Calcular total de páginas
+
+        const paginaAtual = Math.min(Math.max(pagina, 1), totalPaginas);
+
+        const dataPaginada = mappedData.slice((paginaAtual - 1) * itens, paginaAtual * itens);
+
+        const ultimaPagina = totalPaginas;
+
+
+        const baseUrl = req.protocol + '://' + req.get('host') + req.baseUrl + '/medidas-provisorias';
+
+        const links = {
+            primeira: `${baseUrl}?${querystring.stringify({ ano, itens, pagina: 1 })}`,
+            atual: `${baseUrl}?${querystring.stringify({ ano, itens, pagina })}`,
+            ultima: `${baseUrl}?${querystring.stringify({ ano, itens, pagina: ultimaPagina })}`,
+        };
+
+        return res.status(200).json({
+            status: 200,
+            message: `${materias.length} medidas provisórias publicadas em ${ano}`,
+            dados: dataPaginada,
+
+            links
+        });
+
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ status: 500, message: 'Erro interno do servidor' });
+    }
+}
