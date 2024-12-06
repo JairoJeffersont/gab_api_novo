@@ -20,6 +20,7 @@ exports.getProposicoes = async (req, res) => {
         const ordenarPor = req.query.ordenarPor || 'proposicao_id';
         const ordem = req.query.ordem || 'DESC';
         const autoria_unica = parseInt(req.query.autoria_unica, 10) ?? 0;
+        const busca = req.query.busca;
 
         const limit = parseInt(itens, 10);
         const offset = (pagina - 1) * limit;
@@ -31,11 +32,24 @@ exports.getProposicoes = async (req, res) => {
             whereAutoriaUnica.proposicao_proponente = 1;
         }
 
-        const proposicoes = await Proposicao.findAndCountAll({
-            where: {
+        let whereBusca = {};
+        if (busca) {
+            whereBusca = {
+                proposicao_sigla: tipo,
+                proposicao_ementa: { [Op.like]: `%${busca}%` }
+            }
+        } else {
+            whereBusca = {
                 proposicao_ano: ano,
                 proposicao_sigla: tipo,
                 proposicao_arquivada: arquivada,
+            }
+        }
+
+
+        const proposicoes = await Proposicao.findAndCountAll({
+            where: {
+                ...whereBusca
             },
             order: [[ordenarPor, ordem]],
             limit: limit,
@@ -62,7 +76,6 @@ exports.getProposicoes = async (req, res) => {
             atual: `${baseUrl}?${querystring.stringify({ autor, ano, tipo, arquivada, itens, pagina, ordenarPor, ordem, autoria_unica })}`,
             ultima: `${baseUrl}?${querystring.stringify({ autor, ano, tipo, arquivada, itens, pagina: totalPaginas, ordenarPor, ordem, autoria_unica })}`,
         };
-
 
         if (proposicoes.count === 0) {
             return res.status(200).json({ status: 200, message: 'Nenhuma proposição encontrada' });
@@ -217,7 +230,7 @@ exports.BuscarMP = async (req, res) => {
         });
 
         const totalItens = mappedData.length;
-        const totalPaginas = Math.ceil(totalItens / itens); 
+        const totalPaginas = Math.ceil(totalItens / itens);
 
         const paginaAtual = Math.min(Math.max(pagina, 1), totalPaginas);
 
